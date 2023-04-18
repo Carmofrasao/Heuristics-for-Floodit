@@ -8,24 +8,6 @@ int ** lerArquivo(int *n, int *m, int *k, FILE* arquivo){
         perror("Erro ao ler o arquivo");
         exit(1);
     }
-    // Contador para saber se ja leu os tres parametros
-    int valores = 0;
-    // Contador para percorrer os parametros
-    int contp = 0;
-    // Contador para percorrer o numero 
-    int contn = 0;
-    // String para coletar um parametro por vez
-    char * numero = (char*)calloc(4, sizeof(char));
-    if(numero == NULL){
-        perror("Erro ao alocar string");
-        exit(1);
-    }
-    // String que contera todos os parametros da primeira linha
-    char* parametros = (char*)calloc(14, sizeof(char));
-    if(parametros == NULL){
-        perror("Erro ao alocar string");
-        exit(1);
-    }
 
     // Coletando a linha de parametros
     fscanf(arquivo, "%d %d %d", n, m, k);
@@ -47,6 +29,8 @@ int ** lerArquivo(int *n, int *m, int *k, FILE* arquivo){
     for(int i = 0; i < *n; i++)
         for(int l = 0; l < *m; l++)
             fscanf(arquivo, "%d", &matriz[i][l]);
+
+    fclose(arquivo);
 
     return matriz;
 }
