@@ -49,10 +49,9 @@ void main(int argc, char **argv){
 
     arquivo = lerArquivo(&n, &m, &k, nome_arquivo);
 
-    for (int i = 0; i < n; i++){
-        for (int l = 0; l < m; l++)
-            printf("%d ", arquivo[i][l]);
-        printf("\n");
-    }
     
+
+    for (int i = 0; i < n; i++)
+        free(arquivo[i]);
+    free(arquivo);
 }
