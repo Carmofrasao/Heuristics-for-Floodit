@@ -1,1 +1,1 @@
-# trab-1-ia
+# Heuristica para jogo Floodit
