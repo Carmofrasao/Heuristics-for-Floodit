@@ -44,46 +44,9 @@ int ** lerArquivo(int *n, int *m, int *k, FILE* arquivo){
         }
     }
 
-    // String que contera todos os parametros da primeira linha
-    char* linha = (char*)calloc(2*(*m), sizeof(char));
-    if(linha == NULL){
-        perror("Erro ao alocar string");
-        exit(1);
-    }
-
-    // String para coletar a cor, uma por vez
-    char * sCor = (char*)calloc(1, sizeof(*k));
-    if(sCor == NULL){
-        perror("Erro ao alocar string");
-        exit(1);
-    }
-
-    int contl = 0;
-    int contc = 0;
-    char * resultado;
-    for(int i = 0; i < *n; i++){
-        // Coletando a linha de cor
-        resultado = fgets(linha, 2*(*m)+2, arquivo);
-        if(resultado == 0){
-            perror("Não foi possivel ler a linha");
-            exit(1);
-        }
-        for(int l = 0; l < *m; l++){
-            while(linha[contl] != ' '){
-                sCor[contc] = linha[contl];
-                contc++;
-                contl++;
-            }
-            contl++;
-            
-            matriz[i][l] = atoi(sCor);
-
-            contc = 0;
-            memset(sCor, '\0', *k*sizeof(char));
-        }
-        memset(linha, '\0', 2*(*m)+2*sizeof(char));
-        contl = 0;
-    }
+    for(int i = 0; i < *n; i++)
+        for(int l = 0; l < *m; l++)
+            fscanf(arquivo, "%d", &matriz[i][l]);
 
     return matriz;
 }
