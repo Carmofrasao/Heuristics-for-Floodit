@@ -28,32 +28,7 @@ int ** lerArquivo(int *n, int *m, int *k, FILE* arquivo){
     }
 
     // Coletando a linha de parametros
-    char * resultado = fgets(parametros, 14, arquivo);
-    if(resultado == 0){
-        perror("Não foi possivel ler os parametros");
-        exit(1);
-    }
-    
-    // Percorrer toda string até achar os tres parametros
-    while(valores < 3){
-        while(parametros[contp] != ' '){
-            numero[contn] = parametros[contp];
-            contn++;
-            contp++;
-        }
-        contp++;
-        
-        if(valores == 0)
-            *n = atoi(numero);
-        else if(valores == 1)
-            *m = atoi(numero);
-        else if(valores == 2)
-            *k = atoi(numero);
-
-        contn = 0;
-        memset(numero, '\0', 4*sizeof(char));
-        valores++;
-    }
+    fscanf(arquivo, "%d %d %d", n, m, k);
 
     // Matriz com as cores
     int ** matriz = (int**)calloc(*n, sizeof(int*));
@@ -85,6 +60,7 @@ int ** lerArquivo(int *n, int *m, int *k, FILE* arquivo){
 
     int contl = 0;
     int contc = 0;
+    char * resultado;
     for(int i = 0; i < *n; i++){
         // Coletando a linha de cor
         resultado = fgets(linha, 2*(*m)+2, arquivo);
