@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 int ** lerArquivo(int *n, int *m, int *k, FILE* arquivo){
     
@@ -35,28 +36,73 @@ int ** lerArquivo(int *n, int *m, int *k, FILE* arquivo){
     return matriz;
 }
 
-int dfs(
-    int i, int j, int val, int ** vizitados, 
-    int ** mat, int m, int n
-) {
-    vizitados[i][j] = 1;
+bool is_corner(int i, int j, int m, int n) {
+    return (i == 0 && j == 0) || (i == 0 && j == m-1) || (i == n-1 && j == 0) || (i == n-1 && j == m-1);
+}
+
+bool is_valid(int i, int j, int val, int ** mat, int m, int n) {
+    return i >= 0 && i < n && j >= 0 && j < m && mat[i][j] == val;
+}
+
+int dfs(int i, int j, int val, int depth, int ** mat, int m, int n) {
     int max_depth = 0;
-    if (i == 0 || i == n-1 || j == 0 || j == m-1) {
-        max_depth = 1;
-    }
-    int dirs[4][2] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
-    for (int d = 0; d < 4; d++) {
-        int ni = i + dirs[d][0];
-        int nj = j + dirs[d][1];
-        if (ni >= 0 && ni < n && nj >= 0 && nj < m && !vizitados[ni][nj] && mat[ni][nj] == val) {
-            int depth = dfs(ni, nj, val, vizitados, mat, m, n);
-            if (depth > max_depth) {
-                max_depth = depth;
+    int stack_i[n*m], stack_j[n*m], stack_d[n*m];
+    int stack_top = 0;
+
+    stack_i[stack_top] = i;
+    stack_j[stack_top] = j;
+    stack_d[stack_top] = 0;
+
+    while (stack_top >= 0) {
+        int ci = stack_i[stack_top];
+        int cj = stack_j[stack_top];
+        int cd = stack_d[stack_top];
+        stack_top--;
+
+        if (is_valid(ci, cj, val, mat, m, n)) {
+            if (cd > max_depth) {
+                max_depth = cd;
+            }
+
+            int di[] = {-1, 0, 1, 0};
+            int dj[] = {0, 1, 0, -1};
+            for (int d = 0; d < 4; d++) {
+                int ni = ci + di[d];
+                int nj = cj + dj[d];
+                if (is_valid(ni, nj, val, mat, m, n)) {
+                    stack_top++;
+                    stack_i[stack_top] = ni;
+                    stack_j[stack_top] = nj;
+                    stack_d[stack_top] = cd + 1;
+                    mat[ni][nj] = -1;
+                }
             }
         }
     }
-    vizitados[i][j] = 0;
-    return max_depth + 1;
+
+    return max_depth;
+}
+
+void search_corners(int ** mat, int n, int m, int k) {
+    int max_depth = -1;
+    int chosen_i = -1, chosen_j = -1, chosen_val = -1;
+    for (int val = 1; val <= k; val++) {
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                if (is_corner(i, j, m, n) && mat[i][j] != val) {
+                    int depth = dfs(i, j, mat[i][j], 0, mat, m, n);
+                    if (depth > max_depth) {
+                        max_depth = depth;
+                        chosen_i = i;
+                        chosen_j = j;
+                        chosen_val = val;
+                    }
+                }
+            }
+        }
+    }
+
+    printf("Chosen corner: (%d, %d), chosen value: %d\n", chosen_i, chosen_j, chosen_val);
 }
 
 int main(int argc, char **argv){
@@ -73,52 +119,7 @@ int main(int argc, char **argv){
 
     arquivo = lerArquivo(&n, &m, &k, nome_arquivo);
 
-    // Matriz de vizitados
-    int ** vizitados = (int**)calloc(n, sizeof(int*));
-    if(vizitados == NULL){
-        perror("Erro ao alocar vetor de int");
-        exit(1);
-    }
-    for(int i = 0; i < n; i++){
-        vizitados[i] = (int*)calloc(m, sizeof(int));
-        if(vizitados[i] == NULL){
-            perror("Erro ao alocar vetor de int");
-            exit(1);
-        }
-    }
-
-    // inicialização do array de profundidades máximas
-    int profundidade_max = -1;
-
-    int chosen_value = -1;
-    int chosen_i = -1;
-    int chosen_j = -1;
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < m; j++) {
-            for (int v = 1; v <= k; v++) {
-                if (arquivo[i][j] != v) {
-                    int depth = dfs(i, j, v, vizitados, arquivo, m, n);
-                    if (depth > profundidade_max) {
-                        profundidade_max = depth;
-                        chosen_value = v;
-                        chosen_i = i;
-                        chosen_j = j;
-                    }
-                }
-            }
-        }
-    }
-    printf("Chosen value: %d\n", chosen_value);
-    printf("Chosen corner: (%d, %d)\n", chosen_i, chosen_j);
-
-    if (chosen_i == 0 && chosen_j == 0) 
-        printf("Canto escolhido: canto superior esquerdo\n");
-    else if (chosen_i == 0 && chosen_j == m-1)
-        printf("Canto escolhido: canto superior direito\n");
-    else if (chosen_i == n-1 && chosen_j == 0)
-        printf("Canto escolhido: canto inferior esquerdo\n");
-    else if (chosen_i == n-1 && chosen_j == m-1)
-        printf("Canto escolhido: canto inferior direito\n");
+    search_corners(arquivo, n, m, k);
 
     for (int i = 0; i < n; i++)
         free(arquivo[i]);
