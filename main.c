@@ -37,16 +37,18 @@ int ** lerArquivo(int *n, int *m, int *k, FILE* arquivo){
     return matriz;
 }
 
-bool is_valid(int i, int j, int val, int ** mat, int m, int n, int cor) {
-    return i >= 0 && i < n && j >= 0 && j < m && (mat[i][j] == val || mat[i][j] == cor);
+// Verifica se a posição esta dentro da matriz e se a posição da 
+// matriz tem uma cor igual a da primeira posição
+bool is_valid(int i, int j, int val, int ** mat, int m, int n) {
+    return i >= 0 && i < n && j >= 0 && j < m && mat[i][j] == val;
 }
 
 // Busca em profundidade, retorna a maior profundidade
-int dfs(int i, int j, int val, int depth, int ** mat, int m, int n, int cor) {
+int dfs(int i, int j, int val, int ** mat, int m, int n, int cor) {
     int max_depth = 0;
     int *stack_i = (int *)calloc(m*n, sizeof(int));
-    int *stack_j = (int *)calloc(m*n, sizeof(int));;
-    int *stack_d = (int *)calloc(m*n, sizeof(int));;
+    int *stack_j = (int *)calloc(m*n, sizeof(int));
+    int *stack_d = (int *)calloc(m*n, sizeof(int));
     int stack_top = 0;
 
     stack_i[stack_top] = i;
@@ -59,26 +61,29 @@ int dfs(int i, int j, int val, int depth, int ** mat, int m, int n, int cor) {
         int cd = stack_d[stack_top];
         stack_top--;
 
-        if (is_valid(ci, cj, val, mat, m, n, cor)) {
+        if (is_valid(ci, cj, val, mat, m, n)) {
             if (cd > max_depth)
                 max_depth = cd;
+
+            stack_top++;
+            mat[stack_i[stack_top]][stack_j[stack_top]] = cor;
 
             int di[] = {-1, 0, 1, 0};
             int dj[] = {0, 1, 0, -1};
             for (int d = 0; d < 4; d++) {
                 int ni = ci + di[d];
                 int nj = cj + dj[d];
-                if (is_valid(ni, nj, val, mat, m, n, cor)) {
+                if (is_valid(ni, nj, val, mat, m, n)) {
                     stack_top++;
                     stack_i[stack_top] = ni;
                     stack_j[stack_top] = nj;
                     stack_d[stack_top] = cd + 1;
-                    mat[ni][nj] = -1;
+                    mat[ni][nj] = cor;
                 }
             }
         }
     }
-    
+
     free(stack_i);
     free(stack_j);
     free(stack_d);
@@ -86,34 +91,114 @@ int dfs(int i, int j, int val, int depth, int ** mat, int m, int n, int cor) {
     return max_depth;
 }
 
+// Busca em profundidade, retorna o numero de casas preenchidas
+int dfs2(int i, int j, int val, int ** mat, int m, int n) {
+    int max_depth = 0;
+    int *stack_i = (int *)calloc(m*n, sizeof(int));
+    int *stack_j = (int *)calloc(m*n, sizeof(int));;
+    int *stack_d = (int *)calloc(m*n, sizeof(int));;
+    int stack_top = 0;
+    int preenchidos = 0;
+
+    stack_i[stack_top] = i;
+    stack_j[stack_top] = j;
+    stack_d[stack_top] = 0;
+
+    while (stack_top >= 0) {
+        int ci = stack_i[stack_top];
+        int cj = stack_j[stack_top];
+        int cd = stack_d[stack_top];
+        stack_top--;
+
+        if (is_valid(ci, cj, val, mat, m, n)) {
+            if (cd > max_depth)
+                max_depth = cd;
+            mat[ci][cj] = -1;
+            int di[] = {-1, 0, 1, 0};
+            int dj[] = {0, 1, 0, -1};
+            for (int d = 0; d < 4; d++) {
+                int ni = ci + di[d];
+                int nj = cj + dj[d];
+                if (is_valid(ni, nj, val, mat, m, n)) {
+                    stack_top++;
+                    stack_i[stack_top] = ni;
+                    stack_j[stack_top] = nj;
+                    stack_d[stack_top] = cd + 1;
+                    mat[ni][nj] = -1;
+                    preenchidos++;
+                }
+            }
+        }
+    }
+
+    free(stack_i);
+    free(stack_j);
+    free(stack_d);
+
+    return preenchidos;
+}
+
 void search_corners(int ** mat, int n, int m, int k) {
-    int max_depth = -1;
+
+    // Matriz aux
+    int ** matriz1 = (int**)calloc(n, sizeof(int*));
+    if(matriz1 == NULL){
+        perror("Erro ao alocar vetor de int");
+        exit(1);
+    }
+    for(int i = 0; i < n; i++){
+        matriz1[i] = (int*)calloc(m, sizeof(int));
+        if(matriz1[i] == NULL){
+            perror("Erro ao alocar vetor de int");
+            exit(1);
+        }
+    }
+
+    for(int i = 0; i < n; i++)
+        for(int l = 0; l < m; l++)
+            matriz1[i][l] = mat[i][l];
+
+    int max_depth1 = -1;
+    int max_depth2 = -1;
     int chosen_i = -1, chosen_j = -1, chosen_val = -1;
     int di[] = {0, 0, n-1, n-1};
     int dj[] = {0, m-1, 0, m-1};
     // Testando todas as cores
     for (int val = 1; val <= k; val++) {
         // Passando pelos 4 cantos
-        for (int d = 0; d < 4; d++)
+        for (int d = 0; d < 4; d++){
             // Verifica se a cor escolhida ja não esta no canto
             if (mat[di[d]][dj[d]] != val) {
-                int depth = dfs(di[d], dj[d], mat[di[d]][0], dj[d], mat, m, n, val);
-                printf("di = %d, dj = %d, cMat= %d, val = %d, deaph = %d\n", di[d], dj[d], mat[di[d]][dj[d]], val, depth);
-                if (depth > max_depth) {
-                    max_depth = depth;
+                // Faz a busca 
+                int depth1 = dfs(di[d], dj[d], mat[di[d]][dj[d]], mat, m, n, val);
+                int depth2 = dfs2(di[d], dj[d], val, mat, m, n);
+                for(int i = 0; i < n; i++)
+                    for(int l = 0; l < m; l++)
+                        mat[i][l] = matriz1[i][l];
+                // Se a busca encontrou um caminho mais fundo que o anterior, salva
+                if (depth2 > max_depth2) {
+                    max_depth1 = depth1;
+                    max_depth2 = depth2;
                     chosen_i = di[d];
                     chosen_j = dj[d];
                     chosen_val = val;
                 }
             }
+            for(int i = 0; i < n; i++)
+                for(int l = 0; l < m; l++)
+                    mat[i][l] = matriz1[i][l];
+        }
     }
 
-    printf("valor escolhido: %d\n", chosen_val);
-    for (int d = 0; d < 4; d++)
-        if (chosen_i == di[d] && chosen_j == dj[d]){
-            printf("Canto escolhido: canto superior esquerdo\n");
-            break;
-        }
+    if(chosen_i == 0 && chosen_j == 0)
+        printf("a ");
+    else if(chosen_i == 0 && chosen_j == m-1)
+        printf("b ");
+    else if(chosen_i == n-1 &&  chosen_j == 0)
+        printf("c ");
+    else if(chosen_i == n-1 &&  chosen_j == m-1)
+        printf("d ");
+    printf("%d\n", chosen_val);
 }
 
 int main(int argc, char **argv){
