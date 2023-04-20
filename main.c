@@ -4,7 +4,13 @@
 #include <stdbool.h>
 #include <unistd.h>
 
-int ** lerArquivo(int *n, int *m, int *k, FILE* arquivo){
+typedef struct {
+    int cor;
+    int passou;
+    int teste;
+} posicao;
+
+posicao ** lerArquivo(int *n, int *m, int *k, FILE* arquivo){
     
     if(arquivo == NULL){
         perror("Erro ao ler o arquivo");
@@ -15,13 +21,13 @@ int ** lerArquivo(int *n, int *m, int *k, FILE* arquivo){
     fscanf(arquivo, "%d %d %d", n, m, k);
 
     // Matriz com as cores
-    int ** matriz = (int**)calloc(*n, sizeof(int*));
+    posicao ** matriz = (posicao**)calloc(*n, sizeof(posicao*));
     if(matriz == NULL){
         perror("Erro ao alocar vetor de int");
         exit(1);
     }
     for(int i = 0; i < *n; i++){
-        matriz[i] = (int*)calloc(*m, sizeof(int));
+        matriz[i] = (posicao*)calloc(*m, sizeof(posicao));
         if(matriz[i] == NULL){
             perror("Erro ao alocar vetor de int");
             exit(1);
@@ -30,8 +36,10 @@ int ** lerArquivo(int *n, int *m, int *k, FILE* arquivo){
 
     // Coletando a matriz
     for(int i = 0; i < *n; i++)
-        for(int l = 0; l < *m; l++)
-            fscanf(arquivo, "%d", &matriz[i][l]);
+        for(int l = 0; l < *m; l++){
+            fscanf(arquivo, "%d", &matriz[i][l].cor);
+            matriz[i][l].teste = matriz[i][l].cor;
+        }
 
     fclose(arquivo);
 
@@ -40,45 +48,47 @@ int ** lerArquivo(int *n, int *m, int *k, FILE* arquivo){
 
 // Verifica se a posição esta dentro da matriz e se a posição da 
 // matriz tem uma cor igual a da primeira posição
-bool is_valid(int i, int j, int val, int ** mat, int m, int n) {
-    return i >= 0 && i < n && j >= 0 && j < m && mat[i][j] == val;
+bool is_valid(int i, int j, int val, posicao ** mat, int m, int n) {
+    return i >= 0 && i < n && j >= 0 && j < m && mat[i][j].cor == val;
+}
+
+// Verifica se a posição esta dentro da matriz e se a posição da 
+// matriz tem uma cor igual a da primeira posição
+bool is_valid2(int i, int j, int val, posicao ** mat, int m, int n) {
+    return i >= 0 && i < n && j >= 0 && j < m && mat[i][j].teste == val;
 }
 
 // Busca em profundidade, retorna a maior profundidade
-void dfs(int i, int j, int val, int ** mat, int m, int n, int cor) {
-    int max_depth = 0;
+void dfs(int i, int j, int val, posicao ** mat, int m, int n, int cor) {
     int *stack_i = (int *)calloc(m*n, sizeof(int));
     int *stack_j = (int *)calloc(m*n, sizeof(int));
-    int *stack_d = (int *)calloc(m*n, sizeof(int));
     int stack_top = 0;
 
     stack_i[stack_top] = i;
     stack_j[stack_top] = j;
-    stack_d[stack_top] = 0;
 
     while (stack_top >= 0) {
         int ci = stack_i[stack_top];
         int cj = stack_j[stack_top];
-        int cd = stack_d[stack_top];
         stack_top--;
 
-        if (is_valid(ci, cj, val, mat, m, n)) {
-            if (cd > max_depth)
-                max_depth = cd;
-
-            mat[ci][cj] = cor;
+        // O ERRO ESTA AQUI, PARECIDO COM dfs2, ele troca o valor da matriz 
+        // e falha no teste de igualdade
+        if (is_valid2(ci, cj, val, mat, m, n)) {
+            mat[ci][cj].teste = -1;
+            mat[ci][cj].cor = cor;
 
             int di[] = {-1, 0, 1, 0};
             int dj[] = {0, 1, 0, -1};
             for (int d = 0; d < 4; d++) {
                 int ni = ci + di[d];
                 int nj = cj + dj[d];
-                if (is_valid(ni, nj, val, mat, m, n)) {
+                if (is_valid2(ni, nj, val, mat, m, n)) {
                     stack_top++;
                     stack_i[stack_top] = ni;
                     stack_j[stack_top] = nj;
-                    stack_d[stack_top] = cd + 1;
-                    mat[ni][nj] = cor;
+                    mat[ni][nj].teste = -1;
+                    mat[ni][nj].cor = cor;
                 }
             }
         }
@@ -86,46 +96,40 @@ void dfs(int i, int j, int val, int ** mat, int m, int n, int cor) {
 
     free(stack_i);
     free(stack_j);
-    free(stack_d);
 }
 
 // Busca em profundidade, retorna o numero de casas preenchidas
-int dfs2(int i, int j, int val, int ** mat, int m, int n) {
-    int max_depth = 0;
+int dfs2(int i, int j, int val, posicao ** mat, int m, int n) {
     int *stack_i = (int *)calloc(m*n, sizeof(int));
-    int *stack_j = (int *)calloc(m*n, sizeof(int));;
-    int *stack_d = (int *)calloc(m*n, sizeof(int));;
+    int *stack_j = (int *)calloc(m*n, sizeof(int));
     int stack_top = 0;
     int preenchidos = 0;
 
     stack_i[stack_top] = i;
     stack_j[stack_top] = j;
-    stack_d[stack_top] = 0;
 
     while (stack_top >= 0) {
         int ci = stack_i[stack_top];
         int cj = stack_j[stack_top];
-        int cd = stack_d[stack_top];
         stack_top--;
 
-        // O PROBLEMA É ESSE TESTE VVVV, ELE TA COM -1 EM mat[ci][cj], Q É DIFERENTE DE val!!!!
         if (is_valid(ci, cj, val, mat, m, n)) {
-            if (cd > max_depth)
-                max_depth = cd;
 
-            mat[ci][cj] = -1;
+            if(mat[ci][cj].passou != -1){
+                mat[ci][cj].passou = -1;
+                preenchidos++;
+            }
             
             int di[] = {-1, 0, 1, 0};
             int dj[] = {0, 1, 0, -1};
             for (int d = 0; d < 4; d++) {
                 int ni = ci + di[d];
                 int nj = cj + dj[d];
-                if (is_valid(ni, nj, val, mat, m, n)) {
+                if (is_valid(ni, nj, val, mat, m, n) && mat[ni][nj].passou != -1) {
                     stack_top++;
                     stack_i[stack_top] = ni;
                     stack_j[stack_top] = nj;
-                    stack_d[stack_top] = cd + 1;
-                    mat[ni][nj] = -1;
+                    mat[ni][nj].passou = -1;
                     preenchidos++;
                 }
             }
@@ -134,22 +138,21 @@ int dfs2(int i, int j, int val, int ** mat, int m, int n) {
 
     free(stack_i);
     free(stack_j);
-    free(stack_d);
 
     return preenchidos;
 }
 
-void search_corners(int ** mat, int n, int m, int k) {
+void search_corners(posicao ** mat, int n, int m, int k) {
     int preenchidos = 0;
     while(preenchidos <= m*n){
         // Matriz aux
-        int ** matriz1 = (int**)calloc(n, sizeof(int*));
+        posicao ** matriz1 = (posicao**)calloc(n, sizeof(posicao*));
         if(matriz1 == NULL){
             perror("Erro ao alocar vetor de int");
             exit(1);
         }
         for(int i = 0; i < n; i++){
-            matriz1[i] = (int*)calloc(m, sizeof(int));
+            matriz1[i] = (posicao*)calloc(m, sizeof(posicao));
             if(matriz1[i] == NULL){
                 perror("Erro ao alocar vetor de int");
                 exit(1);
@@ -158,9 +161,8 @@ void search_corners(int ** mat, int n, int m, int k) {
 
         for(int i = 0; i < n; i++)
             for(int l = 0; l < m; l++)
-                matriz1[i][l] = mat[i][l];
+                matriz1[i][l].cor = mat[i][l].cor;
 
-        int max_depth1 = -1;
         int max_depth2 = -1;
         int chosen_i = -1, chosen_j = -1, chosen_val = -1;
         int di[] = {0, 0, n-1, n-1};
@@ -170,13 +172,16 @@ void search_corners(int ** mat, int n, int m, int k) {
             // Passando pelos 4 cantos
             for (int d = 0; d < 4; d++){
                 // Verifica se a cor escolhida ja não esta no canto
-                if (mat[di[d]][dj[d]] != val) {
+                if (mat[di[d]][dj[d]].cor != val) {    
                     // Faz a busca 
-                    dfs(di[d], dj[d], mat[di[d]][dj[d]], mat, m, n, val);
+                    dfs(di[d], dj[d], mat[di[d]][dj[d]].cor, mat, m, n, val);
                     int depth2 = dfs2(di[d], dj[d], val, mat, m, n);
                     for(int i = 0; i < n; i++)
-                        for(int l = 0; l < m; l++)
-                            mat[i][l] = matriz1[i][l];
+                        for(int l = 0; l < m; l++){
+                            mat[i][l].cor = matriz1[i][l].cor;
+                            mat[i][l].passou = 0;
+                            mat[i][l].teste = matriz1[i][l].cor;
+                        }
                     // Se a busca encontrou um caminho mais fundo que o anterior, salva
                     if (depth2 > max_depth2) {
                         max_depth2 = depth2;
@@ -186,20 +191,23 @@ void search_corners(int ** mat, int n, int m, int k) {
                     }
                 }
                 for(int i = 0; i < n; i++)
-                    for(int l = 0; l < m; l++)
-                        mat[i][l] = matriz1[i][l];
+                    for(int l = 0; l < m; l++){
+                        mat[i][l].cor = matriz1[i][l].cor;
+                        mat[i][l].passou = 0;
+                        mat[i][l].teste = matriz1[i][l].cor;
+                    }
             }
         }
 
-        // O ERRO PROVAVELMENTE ESTA AQUI!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
-
-        dfs(chosen_i, chosen_j, mat[chosen_i][chosen_j], mat, m, n, chosen_val);
+        dfs(chosen_i, chosen_j, mat[chosen_i][chosen_j].cor, mat, m, n, chosen_val);
         preenchidos = dfs2(chosen_i, chosen_j, chosen_val, mat, m, n);
 
         for(int i = 0; i < n; i++)
             for(int l = 0; l < m; l++)
-                if(mat[i][l] == -1)
-                    mat[i][l] = chosen_val;
+                if(mat[i][l].passou == -1){
+                    mat[i][l].cor = chosen_val;
+                    mat[i][l].teste = chosen_val;
+                }
 
         if(chosen_i == 0 && chosen_j == 0)
             printf("a ");
@@ -210,7 +218,7 @@ void search_corners(int ** mat, int n, int m, int k) {
         else if(chosen_i == n-1 &&  chosen_j == m-1)
             printf("d ");
         printf("%d\n", chosen_val);
-        usleep(500*1000);
+        usleep(500*100);
     }
 }
 
@@ -218,7 +226,7 @@ int main(int argc, char **argv){
     int n = 0;
     int m = 0;
     int k = 0;
-    int ** arquivo;
+    posicao ** arquivo;
     FILE * nome_arquivo;
 
     if(argc > 1)
