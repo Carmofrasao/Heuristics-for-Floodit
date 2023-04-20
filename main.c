@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 int ** lerArquivo(int *n, int *m, int *k, FILE* arquivo){
     
@@ -65,8 +66,7 @@ void dfs(int i, int j, int val, int ** mat, int m, int n, int cor) {
             if (cd > max_depth)
                 max_depth = cd;
 
-            stack_top++;
-            mat[stack_i[stack_top]][stack_j[stack_top]] = cor;
+            mat[ci][cj] = cor;
 
             int di[] = {-1, 0, 1, 0};
             int dj[] = {0, 1, 0, -1};
@@ -108,10 +108,13 @@ int dfs2(int i, int j, int val, int ** mat, int m, int n) {
         int cd = stack_d[stack_top];
         stack_top--;
 
+        // O PROBLEMA É ESSE TESTE VVVV, ELE TA COM -1 EM mat[ci][cj], Q É DIFERENTE DE val!!!!
         if (is_valid(ci, cj, val, mat, m, n)) {
             if (cd > max_depth)
                 max_depth = cd;
+
             mat[ci][cj] = -1;
+            
             int di[] = {-1, 0, 1, 0};
             int dj[] = {0, 1, 0, -1};
             for (int d = 0; d < 4; d++) {
@@ -198,16 +201,16 @@ void search_corners(int ** mat, int n, int m, int k) {
                 if(mat[i][l] == -1)
                     mat[i][l] = chosen_val;
 
-        printf("%d\n", preenchidos);
-        // if(chosen_i == 0 && chosen_j == 0)
-        //     printf("a ");
-        // else if(chosen_i == 0 && chosen_j == m-1)
-        //     printf("b ");
-        // else if(chosen_i == n-1 &&  chosen_j == 0)
-        //     printf("c ");
-        // else if(chosen_i == n-1 &&  chosen_j == m-1)
-        //     printf("d ");
-        // printf("%d ", chosen_val);
+        if(chosen_i == 0 && chosen_j == 0)
+            printf("a ");
+        else if(chosen_i == 0 && chosen_j == m-1)
+            printf("b ");
+        else if(chosen_i == n-1 &&  chosen_j == 0)
+            printf("c ");
+        else if(chosen_i == n-1 &&  chosen_j == m-1)
+            printf("d ");
+        printf("%d\n", chosen_val);
+        usleep(500*1000);
     }
 }
 
