@@ -1,12 +1,11 @@
 # Anderson Aparecido do Carmo Frasão (GRR20204069)
 
-CFLAGS  = -Wall -g
 CC = gcc 
 
 #-----------------------------------------------------------------------------#
 all : main
 
-main: main.o
+main: main.o leitura.o busca.o
 
 #-----------------------------------------------------------------------------#
 
