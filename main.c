@@ -15,7 +15,6 @@ typedef struct {
     int cor;
 } passo;
 
-
 posicao ** lerArquivo(int *n, int *m, int *k, FILE* arquivo){
     
     if(arquivo == NULL){
@@ -59,12 +58,12 @@ bool is_valid(int i, int j, int val, posicao ** mat, int m, int n) {
 }
 
 // Verifica se a posição esta dentro da matriz e se a posição da 
-// matriz tem uma cor igual a da primeira posição
+// matriz tem uma cor igual a cor desjada
 bool is_valid2(int i, int j, int val, posicao ** mat, int m, int n) {
     return i >= 0 && i < n && j >= 0 && j < m && mat[i][j].teste == val;
 }
 
-// Busca em profundidade, retorna a maior profundidade
+// Busca em profundidade, pinta a matriz com a cor escolhida
 void dfs(int i, int j, int val, posicao ** mat, int m, int n, int cor) {
     int *stack_i = (int *)calloc(m*n, sizeof(int));
     if(stack_i == NULL){
@@ -160,7 +159,7 @@ int dfs2(int i, int j, int val, posicao ** mat, int m, int n) {
     return preenchidos;
 }
 
-passo * search_corners(posicao ** mat, int n, int m, int k, int *n_passos) {
+passo * buscaNoCanto(posicao ** mat, int n, int m, int k, int *n_passos) {
     passo * vet_passos = (passo *)calloc(n*m, sizeof(passo));
     if(vet_passos == NULL){
         perror("Erro ao alocar vetor de passos");
@@ -267,7 +266,7 @@ int main(int argc, char **argv){
 
     arquivo = lerArquivo(&n, &m, &k, nome_arquivo);
 
-    passo * vet_passos = search_corners(arquivo, n, m, k, &n_passos);
+    passo * vet_passos = buscaNoCanto(arquivo, n, m, k, &n_passos);
 
     printf("%d\n", n_passos);
     for(int i = 0; i < n_passos; i++)
