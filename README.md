@@ -12,11 +12,11 @@ A heuristica é baseada em duas buscas em profundidade.
 
 * Primeira BFS:
 
-A primeira busca é para preencher um dos cantos com uma cor escolhida;
+* * A primeira busca é para preencher um dos cantos com uma cor escolhida;
     
 * Segunda BFS:
 
-A segunda busca é para contar quantas posições ficaram com a cor escolhida, considerando o que foi pintado na primeira BFS e o que ja estava com a cor escolhida.
+* * A segunda busca é para contar quantas posições ficaram com a cor escolhida, considerando o que foi pintado na primeira BFS e o que ja estava com a cor escolhida.
 
 ## Aplicando a heuristica
 
